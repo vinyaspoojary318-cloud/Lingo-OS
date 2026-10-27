@@ -6,6 +6,7 @@
 #include "pmm.h"
 #include "idt.h"
 #include "keyboard.h"
+#include "fs.h"
 #include "shell.h"
 
 __attribute__((used, section(".limine_requests")))
@@ -52,7 +53,7 @@ void kmain(void) {
 
     console_set_color(0x00FFCC);
     console_print("========================================\n");
-    console_print("          New-OS Kernel v0.5\n");
+    console_print("          New-OS Kernel v0.6\n");
     console_print("========================================\n\n");
 
     console_set_color(0xFFCC55);
@@ -71,12 +72,18 @@ void kmain(void) {
     console_print("[..] Initializing keyboard...\n");
     keyboard_init();
     console_set_color(0x55FF55);
-    console_print("[OK] Keyboard ready\n\n");
+    console_print("[OK] Keyboard ready\n");
+
+    console_set_color(0xFFCC55);
+    console_print("[..] Initializing filesystem...\n");
+    fs_init();
+    console_set_color(0x55FF55);
+    console_print("[OK] In-memory filesystem ready\n\n");
 
     enable_interrupts();
 
     console_set_color(0x00FFAA);
-    console_print("Natural language interface is active.\n\n");
+    console_print("Natural language + filesystem active.\n\n");
 
     shell_run();
 
