@@ -4,15 +4,15 @@
 %macro ISR_NOERR 1
 global isr_stub_%1
 isr_stub_%1:
-    push 0              ; dummy error code
-    push %1             ; interrupt number
+    push 0
+    push %1
     jmp isr_common
 %endmacro
 
 %macro ISR_ERR 1
 global isr_stub_%1
 isr_stub_%1:
-    push %1             ; interrupt number (error code already pushed by CPU)
+    push %1
     jmp isr_common
 %endmacro
 
@@ -24,7 +24,6 @@ irq_stub_%1:
     jmp irq_common
 %endmacro
 
-; CPU Exceptions
 ISR_NOERR 0
 ISR_NOERR 1
 ISR_NOERR 2
@@ -58,16 +57,15 @@ ISR_NOERR 29
 ISR_ERR   30
 ISR_NOERR 31
 
-; IRQs
-IRQ 0, 32       ; Timer
-IRQ 1, 33       ; Keyboard
+IRQ 0, 32
+IRQ 1, 33
 
 extern exception_handler
 extern pic_eoi
 extern keyboard_handler
+extern timer_handler
 
 isr_common:
-    ; Save registers
     push rax
     push rbx
     push rcx
@@ -84,11 +82,10 @@ isr_common:
     push r14
     push r15
 
-    mov rdi, [rsp + 15*8]      ; interrupt number
-    mov rsi, [rsp + 16*8]      ; error code
+    mov rdi, [rsp + 15*8]
+    mov rsi, [rsp + 16*8]
     call exception_handler
 
-    ; Restore (won't reach here usually)
     pop r15
     pop r14
     pop r13
@@ -104,7 +101,7 @@ isr_common:
     pop rcx
     pop rbx
     pop rax
-    add rsp, 16                ; remove int_no and err_code
+    add rsp, 16
     iretq
 
 irq_common:
@@ -124,16 +121,19 @@ irq_common:
     push r14
     push r15
 
-    mov rdi, [rsp + 15*8]      ; irq number (32 or 33)
+    mov rdi, [rsp + 15*8]   ; vector (32 or 33)
 
+    cmp rdi, 32
+    jne .not_timer
+    call timer_handler
+    jmp .eoi
+.not_timer:
     cmp rdi, 33
-    jne .not_keyboard
+    jne .eoi
     call keyboard_handler
-.not_keyboard:
-
-    ; Send EOI
+.eoi:
     mov rdi, [rsp + 15*8]
-    sub rdi, 32                ; convert to IRQ number 0-15
+    sub rdi, 32
     call pic_eoi
 
     pop r15
