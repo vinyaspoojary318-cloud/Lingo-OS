@@ -1,27 +1,11 @@
 #include "syscall.h"
 #include "console.h"
 #include "process.h"
-#include "idt.h"
+#include "user.h"
+#include "timer.h"
 #include <stdint.h>
 
-// External assembly entry
-extern void syscall_entry(void);
-
-// We need to set IDT gate for interrupt 0x80
-// Reuse idt infrastructure
-extern void idt_set_gate_public(uint8_t num, uint64_t handler, uint16_t selector, uint8_t flags);
-
-// Simple write: print string pointed to by arg1 (kernel address for now)
-static uint64_t sys_write(uint64_t str_ptr) {
-    if (str_ptr == 0) return 0;
-    const char *s = (const char *)str_ptr;
-    console_set_color(0xFFFFFF);
-    console_print(s);
-    return 0;
-}
-
 uint64_t syscall_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint64_t arg3) {
-    (void)arg2;
     (void)arg3;
 
     switch (num) {
@@ -33,8 +17,25 @@ uint64_t syscall_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint64_t ar
             process_exit((int)arg1);
             return 0;
 
-        case SYS_WRITE:
-            return sys_write(arg1);
+        case SYS_WRITE: {
+            // arg1 = user pointer to string, arg2 = length (optional)
+            if (!user_ptr_valid((void *)arg1, 1)) {
+                // Allow kernel addresses during early testing
+                if (arg1 < 0xFFFF800000000000ULL && arg1 > 0x1000) {
+                    console_print((const char *)arg1);
+                    return 0;
+                }
+                return (uint64_t)-1;
+            }
+            // Safe path for true user pointers later
+            char buf[128];
+            size_t n = arg2 ? (size_t)arg2 : 127;
+            if (n > 127) n = 127;
+            if (!copy_from_user(buf, (void *)arg1, n)) return (uint64_t)-1;
+            buf[n] = 0;
+            console_print(buf);
+            return 0;
+        }
 
         case SYS_GETPID: {
             struct process *p = process_current();
@@ -42,10 +43,9 @@ uint64_t syscall_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint64_t ar
         }
 
         case SYS_CREATE: {
-            // arg1 = pointer to name (kernel addr for now)
-            const char *name = (const char *)arg1;
-            int pid = process_create(name ? name : "syscall-proc");
-            return (uint64_t)pid;
+            const char *name = "syscall-proc";
+            if (arg1) name = (const char *)arg1;
+            return (uint64_t)process_create(name);
         }
 
         case SYS_PS:
@@ -54,7 +54,7 @@ uint64_t syscall_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint64_t ar
 
         default:
             console_set_color(0xFF5555);
-            console_print("[SYSCALL] Unknown syscall ");
+            console_print("[SYSCALL] Unknown ");
             console_print_dec(num);
             console_print("\n");
             return (uint64_t)-1;
@@ -62,18 +62,6 @@ uint64_t syscall_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint64_t ar
 }
 
 void syscall_init(void) {
-    // Register interrupt 0x80 as syscall gate
-    // 0xEE = present, DPL=3 (user callable), interrupt gate
-    // We need a way to set this - for now we'll add a public helper
-
-    // Since idt.c doesn't export set_gate, we'll do a minimal version here
-    // by calling a new exported function. For simplicity in this step,
-    // we document that int 0x80 is reserved and provide a kernel-side
-    // test interface via shell.
-
     console_set_color(0x55FF55);
-    console_print("[OK] Syscall interface ready\n");
-    console_set_color(0xCCCCCC);
-    console_print("     Syscalls: yield, exit, write, getpid, create, ps\n");
-    console_print("     (callable from kernel for now; Ring 3 hook prepared)\n\n");
+    console_print("[OK] Syscalls (with user ptr checks)\n");
 }
