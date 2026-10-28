@@ -8,6 +8,7 @@
 #include "idt.h"
 #include "keyboard.h"
 #include "fs.h"
+#include "process.h"
 #include "shell.h"
 
 __attribute__((used, section(".limine_requests")))
@@ -53,46 +54,45 @@ void kmain(void) {
 
     console_set_color(0x00FFCC);
     console_print("========================================\n");
-    console_print("          New-OS Kernel v0.8\n");
+    console_print("          New-OS Kernel v0.9\n");
     console_print("========================================\n\n");
 
-    // 1. Physical Memory
     console_set_color(0xFFCC55);
     console_print("[..] Initializing PMM...\n");
     pmm_init(memmap_request.response, hhdm);
     console_set_color(0x55FF55);
     console_print("[OK] Physical Memory Manager\n");
 
-    // 2. Virtual Memory (page tables)
     console_set_color(0xFFCC55);
     console_print("[..] Initializing VMM (paging)...\n");
     vmm_init(hhdm);
 
-    // 3. Interrupts
     console_set_color(0xFFCC55);
     console_print("[..] Setting up IDT + PIC...\n");
     idt_init();
     console_set_color(0x55FF55);
     console_print("[OK] Interrupts ready\n");
 
-    // 4. Keyboard
     console_set_color(0xFFCC55);
     console_print("[..] Initializing keyboard...\n");
     keyboard_init();
     console_set_color(0x55FF55);
     console_print("[OK] Keyboard ready\n");
 
-    // 5. Filesystem
     console_set_color(0xFFCC55);
     console_print("[..] Initializing filesystem...\n");
     fs_init();
     console_set_color(0x55FF55);
-    console_print("[OK] Filesystem ready\n\n");
+    console_print("[OK] Filesystem ready\n");
+
+    console_set_color(0xFFCC55);
+    console_print("[..] Initializing processes...\n");
+    process_init();
 
     enable_interrupts();
 
     console_set_color(0x00FFAA);
-    console_print("Paging active. Foundation for dual-mode ready.\n\n");
+    console_print("Process structures ready. Dual-mode foundation growing.\n\n");
 
     shell_run();
     hcf();
