@@ -4,6 +4,7 @@
 #include <limine.h>
 #include "console.h"
 #include "pmm.h"
+#include "vmm.h"
 #include "idt.h"
 #include "keyboard.h"
 #include "fs.h"
@@ -45,43 +46,53 @@ void kmain(void) {
     }
 
     struct limine_framebuffer *fb = framebuffer_request.response->framebuffers[0];
+    uint64_t hhdm = hhdm_request.response->offset;
 
     console_init(fb);
     console_clear(0x0A0A1A);
 
     console_set_color(0x00FFCC);
     console_print("========================================\n");
-    console_print("          New-OS Kernel v0.7\n");
+    console_print("          New-OS Kernel v0.8\n");
     console_print("========================================\n\n");
 
+    // 1. Physical Memory
     console_set_color(0xFFCC55);
     console_print("[..] Initializing PMM...\n");
-    pmm_init(memmap_request.response, hhdm_request.response->offset);
+    pmm_init(memmap_request.response, hhdm);
     console_set_color(0x55FF55);
     console_print("[OK] Physical Memory Manager\n");
 
+    // 2. Virtual Memory (page tables)
+    console_set_color(0xFFCC55);
+    console_print("[..] Initializing VMM (paging)...\n");
+    vmm_init(hhdm);
+
+    // 3. Interrupts
     console_set_color(0xFFCC55);
     console_print("[..] Setting up IDT + PIC...\n");
     idt_init();
     console_set_color(0x55FF55);
     console_print("[OK] Interrupts ready\n");
 
+    // 4. Keyboard
     console_set_color(0xFFCC55);
     console_print("[..] Initializing keyboard...\n");
     keyboard_init();
     console_set_color(0x55FF55);
     console_print("[OK] Keyboard ready\n");
 
+    // 5. Filesystem
     console_set_color(0xFFCC55);
     console_print("[..] Initializing filesystem...\n");
     fs_init();
     console_set_color(0x55FF55);
-    console_print("[OK] Filesystem ready (folders + files)\n\n");
+    console_print("[OK] Filesystem ready\n\n");
 
     enable_interrupts();
 
     console_set_color(0x00FFAA);
-    console_print("Natural language filesystem active.\n\n");
+    console_print("Paging active. Foundation for dual-mode ready.\n\n");
 
     shell_run();
     hcf();
