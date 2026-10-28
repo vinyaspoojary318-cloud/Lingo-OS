@@ -8,9 +8,11 @@
 #include "gdt.h"
 #include "idt.h"
 #include "keyboard.h"
+#include "timer.h"
 #include "fs.h"
 #include "process.h"
 #include "syscall.h"
+#include "user.h"
 #include "elf.h"
 #include "shell.h"
 
@@ -57,12 +59,12 @@ void kmain(void) {
 
     console_set_color(0x00FFCC);
     console_print("========================================\n");
-    console_print("         New-OS Kernel v1.1\n");
+    console_print("         New-OS Kernel v1.2\n");
     console_print("========================================\n\n");
 
     console_set_color(0xFFCC55); console_print("[..] PMM...\n");
     pmm_init(memmap_request.response, hhdm);
-    console_set_color(0x55FF55); console_print("[OK] Physical Memory Manager\n");
+    console_set_color(0x55FF55); console_print("[OK] PMM\n");
 
     console_set_color(0xFFCC55); console_print("[..] VMM...\n");
     vmm_init(hhdm);
@@ -72,31 +74,37 @@ void kmain(void) {
 
     console_set_color(0xFFCC55); console_print("[..] IDT + PIC...\n");
     idt_init();
-    console_set_color(0x55FF55); console_print("[OK] Interrupts ready\n");
+    console_set_color(0x55FF55); console_print("[OK] Interrupts\n");
+
+    console_set_color(0xFFCC55); console_print("[..] Timer...\n");
+    timer_init(100);
 
     console_set_color(0xFFCC55); console_print("[..] Keyboard...\n");
     keyboard_init();
-    console_set_color(0x55FF55); console_print("[OK] Keyboard ready\n");
+    console_set_color(0x55FF55); console_print("[OK] Keyboard\n");
 
     console_set_color(0xFFCC55); console_print("[..] Filesystem...\n");
     fs_init();
-    console_set_color(0x55FF55); console_print("[OK] Filesystem ready\n");
+    console_set_color(0x55FF55); console_print("[OK] Filesystem (read/write)\n");
 
     console_set_color(0xFFCC55); console_print("[..] Processes...\n");
     process_init();
 
-    console_set_color(0xFFCC55); console_print("[..] Syscalls...\n");
+    console_set_color(0xFFCC55); console_print("[..] Syscalls + user checks...\n");
     syscall_init();
 
     console_set_color(0x55FF55);
-    console_print("[OK] ELF64 loader ready\n\n");
+    console_print("[OK] ELF loader + user pointer validation\n\n");
 
     enable_interrupts();
 
     console_set_color(0x00FFAA);
-    console_print("Dual-mode stack:\n");
-    console_print("  Paging | GDT/Ring3 | Processes | Context switch\n");
-    console_print("  Syscalls | ELF loader\n\n");
+    console_print("v1.2 features:\n");
+    console_print("  1. User pointer validation\n");
+    console_print("  2. Per-process foundation (AS ready)\n");
+    console_print("  3. Ring 3 segments + enter path\n");
+    console_print("  4. PIT timer (IRQ0)\n");
+    console_print("  5. File write support\n\n");
 
     shell_run();
     hcf();
