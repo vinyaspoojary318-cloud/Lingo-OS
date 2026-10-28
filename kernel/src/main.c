@@ -22,12 +22,10 @@ __attribute__((used, section(".limine_requests")))
 static volatile struct limine_framebuffer_request framebuffer_request = {
     .id = LIMINE_FRAMEBUFFER_REQUEST, .revision = 0
 };
-
 __attribute__((used, section(".limine_requests")))
 static volatile struct limine_memmap_request memmap_request = {
     .id = LIMINE_MEMMAP_REQUEST, .revision = 0
 };
-
 __attribute__((used, section(".limine_requests")))
 static volatile struct limine_hhdm_request hhdm_request = {
     .id = LIMINE_HHDM_REQUEST, .revision = 0
@@ -48,7 +46,7 @@ void kmain(void) {
 
     console_set_color(0x00FFCC);
     console_print("========================================\n");
-    console_print("         New-OS Kernel v1.3\n");
+    console_print("         New-OS Kernel v1.4\n");
     console_print("========================================\n\n");
 
     pmm_init(memmap_request.response, hhdm);
@@ -57,26 +55,24 @@ void kmain(void) {
     vmm_init(hhdm);
     gdt_init();
     idt_init();
-    console_set_color(0x55FF55); console_print("[OK] Interrupts\n");
+    console_set_color(0x55FF55); console_print("[OK] GDT/IDT\n");
 
     timer_init(100);
     keyboard_init();
-    console_set_color(0x55FF55); console_print("[OK] Keyboard (Shift/Caps)\n");
+    console_set_color(0x55FF55); console_print("[OK] Keyboard\n");
 
     kheap_init();
     fs_init();
-    console_set_color(0x55FF55); console_print("[OK] FS + heap\n");
-
     process_init();
     syscall_init();
 
     enable_interrupts();
 
     console_set_color(0x00FFAA);
-    console_print("\nv1.3 — 10 steps added:\n");
-    console_print("  heap, shift keys, kill, sleep, uptime,\n");
-    console_print("  yield, improved syscalls, timer sched hint,\n");
-    console_print("  process reclaim, write files\n\n");
+    console_print("\nv1.4 milestones:\n");
+    console_print("  - Per-process page tables\n");
+    console_print("  - Preemptive scheduling (timer)\n");
+    console_print("  - Ring 3 user demo (userdemo / runuser)\n\n");
 
     shell_run();
     hcf();

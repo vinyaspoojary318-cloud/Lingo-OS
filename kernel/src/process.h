@@ -31,15 +31,19 @@ struct process {
     struct cpu_context ctx;
     int exit_code;
     bool is_user;
+    uint64_t user_entry;
+    uint64_t user_stack;
 };
 
 void process_init(void);
 int process_create(const char *name);
+int process_create_user_demo(const char *name);
 struct process *process_current(void);
 struct process *process_get(int pid);
-void process_set_state(int pid, enum process_state state);
 void process_yield(void);
 void process_exit(int code);
 int process_kill(int pid);
 void process_list(void);
 void process_switch(struct process *next);
+void process_schedule(void);  // called from timer for preemption
+void process_enter_user_demo(void); // run current user demo if any
