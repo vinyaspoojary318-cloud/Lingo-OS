@@ -46,7 +46,7 @@ void kmain(void) {
 
     console_set_color(0x00FFCC);
     console_print("========================================\n");
-    console_print("        Natunux Kernel v1.5\n");
+    console_print("          Lingo OS Kernel v1.5\n");
     console_print("========================================\n\n");
 
     pmm_init(memmap_request.response, hhdm);
@@ -66,8 +66,8 @@ void kmain(void) {
     enable_interrupts();
 
     console_set_color(0x00FFAA);
-    console_print("\nNatunux — natural-language-first OS\n");
-    console_print("  userdemo  then  runuser\n\n");
+    console_print("\nLingo OS — natural language system control\n");
+    console_print("  Try: create folder Work | userdemo | runuser\n\n");
 
     shell_run();
     hcf();

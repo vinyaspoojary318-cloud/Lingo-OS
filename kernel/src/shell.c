@@ -50,7 +50,7 @@ static int parse_int(const char *s) {
 
 static void print_prompt(void) {
     console_set_color(0x00FFAA);
-    console_print("natunux:");
+    console_print("lingo:");
     console_set_color(0x55AAFF);
     fs_print_path();
     console_set_color(0x00FFAA);
@@ -60,6 +60,7 @@ static void print_prompt(void) {
 
 static void cmd_help(void) {
     console_set_color(0x55FF55);
+    console_print("Lingo OS — commands & natural language\n\n");
     console_print("FS: ls write read rm cd mkdir\n");
     console_print("Proc: ps create process kill yield userdemo runuser\n");
     console_print("Sys: help clear mem about ticks uptime sleep\n\n");
@@ -72,10 +73,10 @@ static void cmd_mem(void) {
 }
 static void cmd_about(void) {
     console_set_color(0x00FFCC);
-    console_print("Natunux v1.5\n");
+    console_print("Lingo OS v1.5\n");
     console_set_color(0xCCCCCC);
-    console_print("Natural-language-first experimental OS.\n");
-    console_print("Kernel, shell, FS, processes, dual-mode.\n\n");
+    console_print("Experimental OS for natural-language control.\n");
+    console_print("Dual-mode kernel with shell, FS, processes, Ring 3.\n\n");
 }
 static void cmd_ticks(void) { console_print("Ticks: "); console_print_dec(timer_get_ticks()); console_print("\n"); }
 static void cmd_uptime(void) { console_print("Uptime: "); console_print_dec(timer_get_ticks()/100); console_print(" s\n"); }
@@ -188,9 +189,11 @@ static void process_command(char *line) {
 
 void shell_run(void) {
     console_set_color(0x00FFCC);
-    console_print("Natunux Shell v1.5\n");
+    console_print("========================================\n");
+    console_print("         Lingo OS Interactive Shell\n");
+    console_print("========================================\n\n");
     console_set_color(0xCCCCCC);
-    console_print("Natural language + classic commands supported.\n\n");
+    console_print("Natural language ready. Type help for commands.\n\n");
     print_prompt();
     for (;;) {
         if (!keyboard_has_char()) { asm volatile("hlt"); continue; }

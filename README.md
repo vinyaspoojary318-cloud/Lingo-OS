@@ -1,6 +1,6 @@
-# Natunux
+# Lingo OS
 
-**Natunux** is an experimental 64-bit operating system focused on natural-language interaction.
+**Lingo OS** is an experimental 64-bit operating system focused on natural-language interaction.
 
 The goal is to let ordinary people control the system with everyday phrases such as:
 
@@ -46,12 +46,12 @@ make run
 ## Prompt
 
 ```text
-natunux:/>
+lingo:/>
 ```
 
 ## Name
 
-**Natunux** = *natural* (language) + *nux* (Unix/Linux-style suffix).
+**Lingo OS** — natural language (“lingo”) for everyday system control.
 
 ## License
 
