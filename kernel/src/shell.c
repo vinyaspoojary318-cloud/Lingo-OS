@@ -64,18 +64,18 @@ static void cmd_help(void) {
     console_print("Proc: ps create process kill yield userdemo runuser\n");
     console_print("Sys: help clear mem about ticks uptime sleep\n\n");
 }
-
 static void cmd_clear(void) { console_clear(0x0A0A1A); }
 static void cmd_mem(void) {
     console_print("Total "); console_print_dec(pmm_get_total_memory()/1024/1024);
     console_print(" Free "); console_print_dec(pmm_get_free_memory()/1024/1024);
     console_print(" MiB\n");
 }
-static void cmd_about(void) { console_set_color(0x00FFCC); console_print("New-OS v1.4 — Ring3 + preemption\n"); }
-static void cmd_ticks(void) { console_print("Ticks: "); console_print_dec(timer_get_ticks()); console_print("\n"); }
-static void cmd_uptime(void) {
-    console_print("Uptime: "); console_print_dec(timer_get_ticks()/100); console_print(" s\n");
+static void cmd_about(void) {
+    console_set_color(0x00FFCC);
+    console_print("New-OS v1.5 — Ring3 + syscall return to shell\n");
 }
+static void cmd_ticks(void) { console_print("Ticks: "); console_print_dec(timer_get_ticks()); console_print("\n"); }
+static void cmd_uptime(void) { console_print("Uptime: "); console_print_dec(timer_get_ticks()/100); console_print(" s\n"); }
 static void cmd_sleep(const char *a) {
     int ms = parse_int(a); if (ms<=0) ms=1000;
     console_print("Sleeping...\n"); timer_sleep(ms); console_print("Done\n");
@@ -114,13 +114,8 @@ static void cmd_kill(const char *a) {
     else { console_set_color(0xFF5555); console_print("Fail\n"); }
 }
 static void cmd_yield(void) { process_yield(); }
-static void cmd_userdemo(void) {
-    int pid = process_create_user_demo("userdemo");
-    if (pid < 0) { console_set_color(0xFF5555); console_print("Failed to create user demo\n"); }
-}
-static void cmd_runuser(void) {
-    process_enter_user_demo();
-}
+static void cmd_userdemo(void) { process_create_user_demo("userdemo"); }
+static void cmd_runuser(void) { process_enter_user_demo(); }
 
 static int try_nl(const char *line) {
     if (contains_word(line,"help")) { cmd_help(); return 1; }
@@ -132,12 +127,10 @@ static int try_nl(const char *line) {
     if (contains_word(line,"ls")||contains_phrase(line,"show files")) { cmd_ls(); return 1; }
     if (contains_word(line,"ps")||contains_phrase(line,"show processes")) { cmd_ps(); return 1; }
     if (contains_word(line,"yield")) { cmd_yield(); return 1; }
-    if (contains_word(line,"userdemo")||contains_phrase(line,"create user")) { cmd_userdemo(); return 1; }
+    if (contains_word(line,"userdemo")) { cmd_userdemo(); return 1; }
     if (contains_word(line,"runuser")||contains_phrase(line,"run user")) { cmd_runuser(); return 1; }
     if (contains_phrase(line,"create process")) {
-        const char *n=last_word(line);
-        if (n&&!str_eq(n,"process")) cmd_mkproc(n);
-        return 1;
+        const char *n=last_word(line); if(n&&!str_eq(n,"process")) cmd_mkproc(n); return 1;
     }
     if (contains_word(line,"kill")) { const char *n=last_word(line); if(n) cmd_kill(n); return 1; }
     if (contains_phrase(line,"create folder")||contains_phrase(line,"make folder")) {
@@ -161,7 +154,6 @@ static int try_nl(const char *line) {
 static void process_command(char *line) {
     while (*line==' ') line++;
     if (!*line) return;
-
     if (str_eq(line,"help")) { cmd_help(); return; }
     if (str_eq(line,"clear")) { cmd_clear(); return; }
     if (str_eq(line,"mem")) { cmd_mem(); return; }
@@ -174,7 +166,6 @@ static void process_command(char *line) {
     if (str_eq(line,"userdemo")) { cmd_userdemo(); return; }
     if (str_eq(line,"runuser")) { cmd_runuser(); return; }
     if (str_eq(line,"pwd")) { fs_print_path(); console_print("\n"); return; }
-
     if (str_starts_with(line,"write ")) {
         char *p=line+6; while(*p==' ')p++;
         char *name=p; while(*p&&*p!=' ')p++;
@@ -187,7 +178,6 @@ static void process_command(char *line) {
     if (str_starts_with(line,"cd ")) { cmd_cd(line+3); return; }
     if (str_starts_with(line,"rm ")) { cmd_rm(line+3); return; }
     if (str_starts_with(line,"read ")) { cmd_read(line+5); return; }
-
     if (try_nl(line)) return;
     console_set_color(0xFF5555);
     console_print("Unknown: "); console_print(line); console_print("\n");
@@ -195,11 +185,10 @@ static void process_command(char *line) {
 
 void shell_run(void) {
     console_set_color(0x00FFCC);
-    console_print("New-OS Shell v1.4\n");
+    console_print("New-OS Shell v1.5\n");
     console_set_color(0xCCCCCC);
-    console_print("Ring3 demo:  userdemo   then   runuser\n\n");
+    console_print("userdemo → runuser → (syscall exit) → back here\n\n");
     print_prompt();
-
     for (;;) {
         if (!keyboard_has_char()) { asm volatile("hlt"); continue; }
         char c = keyboard_getchar();

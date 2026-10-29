@@ -1,17 +1,16 @@
-; Context switch and Ring 3 entry for New-OS
-; NASM syntax, 64-bit
+; Context switch, Ring 3 entry, syscall entry — New-OS
+bits 64
 
 global context_switch
 global enter_user_mode
 global syscall_entry
+global return_to_shell_asm
 
 extern syscall_handler
+extern user_exit_return
 
 ; void context_switch(struct cpu_context *old, struct cpu_context *new)
-; rdi = old context
-; rsi = new context
 context_switch:
-    ; Save old context
     mov [rdi + 0*8], r15
     mov [rdi + 1*8], r14
     mov [rdi + 2*8], r13
@@ -27,20 +26,13 @@ context_switch:
     mov [rdi + 12*8], rcx
     mov [rdi + 13*8], rbx
     mov [rdi + 14*8], rax
-
-    ; Save RIP (return address)
     mov rax, [rsp]
     mov [rdi + 15*8], rax
-
-    ; Save RFLAGS
     pushfq
     pop rax
     mov [rdi + 17*8], rax
-
-    ; Save RSP
     mov [rdi + 18*8], rsp
 
-    ; Load new context
     mov r15, [rsi + 0*8]
     mov r14, [rsi + 1*8]
     mov r13, [rsi + 2*8]
@@ -50,55 +42,35 @@ context_switch:
     mov r9,  [rsi + 6*8]
     mov r8,  [rsi + 7*8]
     mov rbp, [rsi + 8*8]
-    ; skip rdi/rsi for now
     mov rdx, [rsi + 11*8]
     mov rcx, [rsi + 12*8]
     mov rbx, [rsi + 13*8]
     mov rax, [rsi + 14*8]
-
-    ; Load new RSP
     mov rsp, [rsi + 18*8]
-
-    ; Load RFLAGS
     mov rax, [rsi + 17*8]
     push rax
     popfq
-
-    ; Jump to new RIP
     mov rax, [rsi + 15*8]
     push rax
-
     mov rdi, [rsi + 9*8]
     mov rsi, [rsi + 10*8]
-
     ret
 
 ; void enter_user_mode(uint64_t entry, uint64_t user_stack)
-; rdi = user entry point
-; rsi = user stack pointer
 enter_user_mode:
-    ; Build iretq frame for Ring 3
-    ; SS
-    mov ax, 0x23          ; User data segment (GDT index 4, RPL=3)
-    push rax
+    mov ax, 0x23
+    mov ds, ax
+    mov es, ax
 
-    ; RSP (user stack)
-    push rsi
-
-    ; RFLAGS
+    push 0x23              ; SS
+    push rsi               ; RSP
     pushfq
     pop rax
-    or rax, 0x200         ; Enable interrupts
-    push rax
+    or rax, 0x200
+    push rax               ; RFLAGS
+    push 0x1B              ; CS (user code)
+    push rdi               ; RIP
 
-    ; CS
-    mov ax, 0x1B          ; User code segment (GDT index 3, RPL=3)
-    push rax
-
-    ; RIP
-    push rdi
-
-    ; Clear general registers for safety
     xor rax, rax
     xor rbx, rbx
     xor rcx, rcx
@@ -112,12 +84,10 @@ enter_user_mode:
     xor r13, r13
     xor r14, r14
     xor r15, r15
-
     iretq
 
-; Syscall entry point (called via interrupt 0x80 or syscall later)
+; int 0x80 entry — user/kernel
 syscall_entry:
-    ; Save user registers
     push rax
     push rbx
     push rcx
@@ -134,27 +104,21 @@ syscall_entry:
     push r14
     push r15
 
-    ; Arguments: rdi already has syscall number if using int 0x80 convention
-    ; For int 0x80: eax = syscall number, args in ebx, ecx, edx...
-    ; We'll use: rax = number, rdi, rsi, rdx, r10, r8, r9 = args (Linux style-ish)
-
-    mov rdi, rax          ; syscall number
-    mov rsi, rdi          ; arg1 - wait, need to fix
-    ; Actually after pushes, restore properly
-
-    ; Call C handler
-    ; syscall_handler(uint64_t num, uint64_t arg1, ...)
-    ; For simplicity: num in rax (saved), we pass from stack
-
-    mov rdi, [rsp + 14*8] ; rax (syscall number)
-    mov rsi, [rsp + 9*8]  ; rdi (arg1)
-    mov rdx, [rsp + 8*8]  ; rsi (arg2)
-    mov rcx, [rsp + 11*8] ; rdx (arg3)
+    ; Linux-ish: rax=num, rdi=arg1, rsi=arg2, rdx=arg3
+    ; After pushes, original rax is at [rsp+14*8]
+    mov rdi, [rsp + 14*8]   ; syscall number (rax)
+    mov rsi, [rsp + 9*8]    ; arg1 (original rdi)
+    mov rdx, [rsp + 8*8]    ; arg2 (original rsi)
+    mov rcx, [rsp + 11*8]   ; arg3 (original rdx)
 
     call syscall_handler
 
-    ; Return value in rax - put it back
-    mov [rsp + 14*8], rax
+    ; If handler returned special value 0xDEADBEEF, jump to shell return
+    mov rbx, 0xDEADBEEF
+    cmp rax, rbx
+    je .exit_to_shell
+
+    mov [rsp + 14*8], rax   ; return value -> user rax
 
     pop r15
     pop r14
@@ -171,5 +135,14 @@ syscall_entry:
     pop rcx
     pop rbx
     pop rax
-
     iretq
+
+.exit_to_shell:
+    ; Discard interrupt frame and go to C return path
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    call user_exit_return
+    ; never returns; if it does, halt
+    jmp $

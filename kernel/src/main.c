@@ -46,21 +46,18 @@ void kmain(void) {
 
     console_set_color(0x00FFCC);
     console_print("========================================\n");
-    console_print("         New-OS Kernel v1.4\n");
+    console_print("         New-OS Kernel v1.5\n");
     console_print("========================================\n\n");
 
     pmm_init(memmap_request.response, hhdm);
     console_set_color(0x55FF55); console_print("[OK] PMM\n");
-
     vmm_init(hhdm);
     gdt_init();
     idt_init();
     console_set_color(0x55FF55); console_print("[OK] GDT/IDT\n");
-
     timer_init(100);
     keyboard_init();
     console_set_color(0x55FF55); console_print("[OK] Keyboard\n");
-
     kheap_init();
     fs_init();
     process_init();
@@ -69,10 +66,8 @@ void kmain(void) {
     enable_interrupts();
 
     console_set_color(0x00FFAA);
-    console_print("\nv1.4 milestones:\n");
-    console_print("  - Per-process page tables\n");
-    console_print("  - Preemptive scheduling (timer)\n");
-    console_print("  - Ring 3 user demo (userdemo / runuser)\n\n");
+    console_print("\nv1.5: Ring3 -> syscall exit -> shell\n");
+    console_print("  userdemo  then  runuser\n\n");
 
     shell_run();
     hcf();

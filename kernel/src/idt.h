@@ -2,15 +2,8 @@
 
 #include <stdint.h>
 
-// Initialize the Interrupt Descriptor Table and PIC
 void idt_init(void);
+void idt_set_gate(uint8_t num, uint64_t handler, uint16_t selector, uint8_t flags);
 
-// Enable interrupts (STI)
-static inline void enable_interrupts(void) {
-    asm volatile ("sti");
-}
-
-// Disable interrupts (CLI)
-static inline void disable_interrupts(void) {
-    asm volatile ("cli");
-}
+static inline void enable_interrupts(void) { asm volatile ("sti"); }
+static inline void disable_interrupts(void) { asm volatile ("cli"); }

@@ -21,11 +21,11 @@ struct idt_ptr {
 static struct idt_entry idt[256];
 static struct idt_ptr idtp;
 
-extern void isr_stub_0(void); extern void isr_stub_1(void);
-extern void isr_stub_2(void); extern void isr_stub_3(void);
-extern void isr_stub_4(void); extern void isr_stub_5(void);
-extern void isr_stub_6(void); extern void isr_stub_7(void);
-extern void isr_stub_8(void); extern void isr_stub_9(void);
+extern void isr_stub_0(void);  extern void isr_stub_1(void);
+extern void isr_stub_2(void);  extern void isr_stub_3(void);
+extern void isr_stub_4(void);  extern void isr_stub_5(void);
+extern void isr_stub_6(void);  extern void isr_stub_7(void);
+extern void isr_stub_8(void);  extern void isr_stub_9(void);
 extern void isr_stub_10(void); extern void isr_stub_11(void);
 extern void isr_stub_12(void); extern void isr_stub_13(void);
 extern void isr_stub_14(void); extern void isr_stub_15(void);
@@ -39,8 +39,9 @@ extern void isr_stub_28(void); extern void isr_stub_29(void);
 extern void isr_stub_30(void); extern void isr_stub_31(void);
 extern void irq_stub_0(void);
 extern void irq_stub_1(void);
+extern void syscall_entry(void);
 
-static void idt_set_gate(uint8_t num, uint64_t handler, uint16_t selector, uint8_t flags) {
+void idt_set_gate(uint8_t num, uint64_t handler, uint16_t selector, uint8_t flags) {
     idt[num].offset_low  = (uint16_t)(handler & 0xFFFF);
     idt[num].offset_mid  = (uint16_t)((handler >> 16) & 0xFFFF);
     idt[num].offset_high = (uint32_t)((handler >> 32) & 0xFFFFFFFF);
@@ -111,13 +112,15 @@ void idt_init(void) {
     idt_set_gate(30, (uint64_t)isr_stub_30, 0x08, 0x8E);
     idt_set_gate(31, (uint64_t)isr_stub_31, 0x08, 0x8E);
 
-    idt_set_gate(32, (uint64_t)irq_stub_0, 0x08, 0x8E); // Timer
-    idt_set_gate(33, (uint64_t)irq_stub_1, 0x08, 0x8E); // Keyboard
+    idt_set_gate(32, (uint64_t)irq_stub_0, 0x08, 0x8E);
+    idt_set_gate(33, (uint64_t)irq_stub_1, 0x08, 0x8E);
+
+    // Syscall interrupt 0x80 — DPL=3 so Ring 3 can call it
+    // 0xEE = Present, DPL=3, 32-bit interrupt gate
+    idt_set_gate(0x80, (uint64_t)syscall_entry, 0x08, 0xEE);
 
     pic_remap();
-
-    // Unmask timer (IRQ0) and keyboard (IRQ1)
-    outb(PIC1_DATA, 0xFC); // 11111100
+    outb(PIC1_DATA, 0xFC);
     outb(PIC2_DATA, 0xFF);
 
     asm volatile ("lidt %0" : : "m"(idtp));
@@ -136,9 +139,4 @@ void exception_handler(uint64_t int_no, uint64_t err_code) {
 void pic_eoi(uint8_t irq) {
     if (irq >= 8) outb(PIC2_COMMAND, 0x20);
     outb(PIC1_COMMAND, 0x20);
-}
-
-// Called from irq_common for IRQ0
-void irq0_handler(void) {
-    timer_handler();
 }
