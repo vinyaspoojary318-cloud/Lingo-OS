@@ -50,7 +50,7 @@ static int parse_int(const char *s) {
 
 static void print_prompt(void) {
     console_set_color(0x00FFAA);
-    console_print("new-os:");
+    console_print("natunux:");
     console_set_color(0x55AAFF);
     fs_print_path();
     console_set_color(0x00FFAA);
@@ -72,7 +72,10 @@ static void cmd_mem(void) {
 }
 static void cmd_about(void) {
     console_set_color(0x00FFCC);
-    console_print("New-OS v1.5 — Ring3 + syscall return to shell\n");
+    console_print("Natunux v1.5\n");
+    console_set_color(0xCCCCCC);
+    console_print("Natural-language-first experimental OS.\n");
+    console_print("Kernel, shell, FS, processes, dual-mode.\n\n");
 }
 static void cmd_ticks(void) { console_print("Ticks: "); console_print_dec(timer_get_ticks()); console_print("\n"); }
 static void cmd_uptime(void) { console_print("Uptime: "); console_print_dec(timer_get_ticks()/100); console_print(" s\n"); }
@@ -185,9 +188,9 @@ static void process_command(char *line) {
 
 void shell_run(void) {
     console_set_color(0x00FFCC);
-    console_print("New-OS Shell v1.5\n");
+    console_print("Natunux Shell v1.5\n");
     console_set_color(0xCCCCCC);
-    console_print("userdemo → runuser → (syscall exit) → back here\n\n");
+    console_print("Natural language + classic commands supported.\n\n");
     print_prompt();
     for (;;) {
         if (!keyboard_has_char()) { asm volatile("hlt"); continue; }

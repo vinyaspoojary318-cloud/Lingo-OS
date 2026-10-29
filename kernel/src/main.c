@@ -46,7 +46,7 @@ void kmain(void) {
 
     console_set_color(0x00FFCC);
     console_print("========================================\n");
-    console_print("         New-OS Kernel v1.5\n");
+    console_print("        Natunux Kernel v1.5\n");
     console_print("========================================\n\n");
 
     pmm_init(memmap_request.response, hhdm);
@@ -66,7 +66,7 @@ void kmain(void) {
     enable_interrupts();
 
     console_set_color(0x00FFAA);
-    console_print("\nv1.5: Ring3 -> syscall exit -> shell\n");
+    console_print("\nNatunux — natural-language-first OS\n");
     console_print("  userdemo  then  runuser\n\n");
 
     shell_run();

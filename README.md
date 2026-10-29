@@ -1,56 +1,58 @@
-# New-OS
+# Natunux
 
-Minimal real operating system kernel started from scratch.
+**Natunux** is an experimental 64-bit operating system focused on natural-language interaction.
 
-Goal: A new OS where ordinary people can control the system with natural language commands (e.g. "create folder", "make a child folder").
+The goal is to let ordinary people control the system with everyday phrases such as:
 
-## Current Status
+- `create folder Projects`
+- `show files`
+- `go to Projects`
 
-- Minimal 64-bit higher-half kernel using the Limine boot protocol
-- Boots in QEMU and draws a simple white diagonal line on the framebuffer
-- Ready for the next steps: console, memory management, interrupts, etc.
+instead of only traditional commands.
 
-## How to build and run
+## Status
 
-### Prerequisites
-- A Linux or macOS system (or WSL2 on Windows)
-- `make`, `gcc` (or clang) that can produce x86-64 ELF
-- `xorriso` (for ISO creation)
-- `qemu-system-x86_64`
-- Git
+Early research / hobby kernel (v1.5).
 
-### Quick start (recommended)
+### Implemented
 
-1. Clone the official Limine C template (it has a complete working build system):
+- 64-bit kernel (Limine bootloader)
+- Physical + virtual memory management
+- GDT, IDT, interrupts, keyboard (Shift/Caps)
+- PIT timer and basic preemptive scheduling
+- Interactive shell with natural-language phrases
+- In-memory filesystem (folders + files, read/write)
+- Process structures, context switch, kill/yield
+- Dual-mode foundation: Ring 0 / Ring 3, syscalls (`int 0x80`)
+- ELF loader basics + user-mode demo (`userdemo` / `runuser`)
+
+### Not yet
+
+- Persistent disk filesystem
+- Full multi-user isolation
+- Real ELF app ecosystem
+- Networking / GUI
+
+## Build & run
 
 ```bash
-git clone https://github.com/limine-bootloader/limine-c-template-x86-64.git temp-template
-cp -r temp-template/* .
-rm -rf temp-template
-```
-
-2. Replace `kernel/src/main.c` with the version in this repository.
-
-3. Build and run:
-
-```bash
+git clone https://github.com/vinyaspoojary318-cloud/New-OS.git
+cd New-OS
+# follow Limine C template setup, then:
 make
 make run
 ```
 
-You should see a white diagonal line on a black screen. That means the kernel is alive.
+## Prompt
 
-## Project Vision
+```text
+natunux:/>
+```
 
-This is the foundation of a new operating system designed so that common people can write simple natural language commands instead of traditional shell commands.
+## Name
 
-Next milestones:
-1. Proper console / text output
-2. Memory management
-3. Interrupts + keyboard
-4. Simple filesystem
-5. Natural language command interpreter as a core system service
+**Natunux** = *natural* (language) + *nux* (Unix/Linux-style suffix).
 
 ## License
 
-MIT (or change as you prefer)
+Experimental project — use and learn freely.
